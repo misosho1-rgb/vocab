@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>어휘테스트</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap">
+<style>
+:root{--bg:#eef2f6;--card:#fff;--ink:#16233f;--sub:#5b6882;--line:#d5dce7;--main:#0f766e;--mainbg:#d9f0ec;--bad:#b4401a;--badbg:#f9e3da;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#10172a;--card:#19223a;--ink:#e8edf7;--sub:#9aa7c2;--line:#2b3656;--main:#4fd1c0;--mainbg:#143a3a;--bad:#ff9a73;--badbg:#44261c}}
+:root[data-theme="dark"]{--bg:#10172a;--card:#19223a;--ink:#e8edf7;--sub:#9aa7c2;--line:#2b3656;--main:#4fd1c0;--mainbg:#143a3a;--bad:#ff9a73;--badbg:#44261c}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'Noto Sans KR',system-ui,sans-serif;line-height:1.6}
+main{max-width:640px;margin:0 auto;padding:20px 16px 40px}
+h1{font-size:22px;margin:0 0 4px}
+.sub{color:var(--sub);font-size:14px;margin:0 0 18px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px}
+.stat b{display:block;font-size:24px;line-height:1.2}
+.stat span{font-size:12px;color:var(--sub)}
+.bar{height:8px;background:var(--line);border-radius:4px;overflow:hidden;margin:6px 0 18px}
+.bar i{display:block;height:100%;background:var(--main);width:0}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:14px}
+.row{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 14px}
+.row label{font-size:13px;color:var(--sub);width:100%;margin-bottom:-2px}
+.chip{border:1px solid var(--line);background:transparent;color:var(--ink);padding:8px 14px;border-radius:20px;font:inherit;font-size:14px;cursor:pointer}
+.chip.on{background:var(--main);border-color:var(--main);color:var(--bg)}
+button:focus-visible{outline:3px solid var(--main);outline-offset:2px}
+.go{width:100%;padding:14px;border:0;border-radius:10px;background:var(--main);color:var(--bg);font:inherit;font-weight:700;font-size:16px;cursor:pointer}
+.go:disabled{opacity:.45;cursor:default}
+.q{font-size:34px;font-weight:700;text-align:center;margin:18px 0 22px;word-break:keep-all}
+.q.ko{font-size:26px}
+.top{display:flex;justify-content:space-between;font-size:13px;color:var(--sub)}
+.opt{display:block;width:100%;text-align:left;margin-bottom:8px;padding:13px 14px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink);font:inherit;font-size:16px;cursor:pointer}
+.opt.ok{background:var(--mainbg);border-color:var(--main)}
+.opt.no{background:var(--badbg);border-color:var(--bad)}
+.opt:disabled{cursor:default}
+.big{font-size:44px;font-weight:700;text-align:center;margin:8px 0}
+.wrong{margin:0;padding:0;list-style:none}
+.wrong li{padding:8px 0;border-bottom:1px solid var(--line);font-size:15px}
+.wrong b{margin-right:8px}
+.link{background:none;border:0;color:var(--sub);font:inherit;font-size:13px;text-decoration:underline;cursor:pointer;padding:6px 0}
+.hide{display:none}
+</style>
+</head>
+<body>
+<main>
+<h1>어휘테스트</h1>
+<p class="sub">중상급 빈출단어 <span id="total"></span>개 · 랜덤 4지선다</p>
+
+<section id="home">
+  <div class="stats">
+    <div class="stat"><b id="sMastered">0</b><span>외운 단어</span></div>
+    <div class="stat"><b id="sAcc">-</b><span>정답률</span></div>
+    <div class="stat"><b id="sBest">0</b><span>최고 연속 정답</span></div>
+  </div>
+  <div class="bar" role="progressbar" aria-label="암기 진행률"><i id="prog"></i></div>
+  <div class="panel">
+    <div class="row"><label>출제 방향</label>
+      <button class="chip on" data-k="dir" data-v="en">영어 → 한글</button>
+      <button class="chip" data-k="dir" data-v="ko">한글 → 영어</button>
+      <button class="chip" data-k="dir" data-v="mix">섞어서</button></div>
+    <div class="row"><label>문제 수</label>
+      <button class="chip" data-k="n" data-v="10">10</button>
+      <button class="chip on" data-k="n" data-v="20">20</button>
+      <button class="chip" data-k="n" data-v="50">50</button></div>
+    <div class="row"><label>범위</label>
+      <button class="chip on" data-k="scope" data-v="all">전체</button>
+      <button class="chip" data-k="scope" data-v="new">안 푼 단어 우선</button>
+      <button class="chip" data-k="scope" data-v="wrong">오답 단어만</button></div>
+    <button class="go" id="start">시작하기</button>
+    <div id="msg" class="sub" style="margin:10px 0 0"></div>
+  </div>
+  <button class="link" id="reset">기록 초기화</button>
+</section>
+
+<section id="quiz" class="hide">
+  <div class="top"><span id="qn"></span><span id="qs"></span></div>
+  <div class="panel">
+    <div class="q" id="qq"></div>
+    <div id="opts"></div>
+    <button class="go hide" id="next">다음 문제</button>
+  </div>
+</section>
+
+<section id="result" class="hide">
+  <div class="panel">
+    <div class="sub" style="text-align:center;margin:0">이번 결과</div>
+    <div class="big" id="rs"></div>
+    <div class="sub" id="rt" style="text-align:center"></div>
+    <ul class="wrong" id="wl"></ul>
+  </div>
+  <button class="go" id="again">다시 풀기</button>
+  <button class="link" id="home2">처음으로</button>
+</section>
+</main>
+
+<script>
+const RAW=`accommodate|수용하다, 적응시키다
+acquire|얻다, 인수하다
+adjacent|인접한
+adjust|조정하다
+advocate|옹호하다, 지지자
+affordable|가격이 적당한
+agenda|안건, 의제
+allocate|할당하다
+alternative|대안, 대체의
+amend|수정하다
+anticipate|예상하다
+applicant|지원자
+appraisal|평가
+appropriate|적절한
+approximately|대략
+assemble|조립하다, 모이다
+assess|평가하다
+assign|배정하다, 맡기다
+attain|달성하다
+attribute|~탓으로 돌리다, 속성
+audit|회계감사
+authorize|승인하다
+availability|이용 가능성
+beneficial|유익한
+benefit|혜택, 이익
+bid|입찰, 입찰하다
+bulk|대량
+candidate|후보자
+capacity|수용력, 용량
+cease|중단하다
+certificate|증명서
+clarify|명확히 하다
+clientele|고객층
+collaborate|협력하다
+commence|시작하다
+commitment|약속, 헌신
+compensate|보상하다
+competent|유능한
+compile|편집하다, 모으다
+complaint|불만
+comply|준수하다
+component|구성 요소
+comprehensive|포괄적인
+conceive|생각해내다
+concern|우려, 관련되다
+conclude|결론짓다
+conduct|수행하다, 실시하다
+confidential|기밀의
+confirm|확인하다
+consecutive|연속적인
+consent|동의
+consequence|결과
+considerable|상당한
+consistent|일관된
+consult|상담하다
+consume|소비하다
+contingency|비상 사태, 우발
+contract|계약
+contribute|기여하다
+convene|소집하다
+convenient|편리한
+cooperate|협력하다
+coordinate|조정하다
+courier|택배 업체, 배달원
+courteous|정중한
+criteria|기준
+currency|통화
+curtail|줄이다, 삭감하다
+deadline|마감일
+decline|감소하다, 거절하다
+dedicated|헌신적인
+defect|결함
+deficit|적자
+delegate|위임하다, 대표
+deliberate|신중한, 고의적인
+demonstrate|보여주다, 시연하다
+depart|출발하다
+deposit|보증금, 예금
+depreciation|가치 하락, 감가상각
+designate|지정하다
+detect|감지하다
+determine|결정하다
+diminish|줄어들다
+disclose|공개하다
+discount|할인
+dispatch|발송하다
+distribute|배포하다
+diverse|다양한
+document|문서
+domestic|국내의
+draft|초안
+durable|내구성 있는
+eligible|자격이 있는
+embark|착수하다, 승선하다
+emphasize|강조하다
+enclose|동봉하다
+encounter|맞닥뜨리다
+endorse|보증하다, 승인하다
+enhance|향상시키다
+enroll|등록하다
+ensure|보장하다
+enterprise|기업
+entitle|자격을 주다
+envision|상상하다, 구상하다
+equipment|장비
+establish|설립하다
+estimate|추정하다
+evaluate|평가하다
+evident|분명한
+exceed|초과하다
+exclusive|독점적인
+execute|실행하다
+exempt|면제된
+expand|확장하다
+expenditure|지출
+expertise|전문 지식
+expire|만료되다
+explicit|명백한
+facilitate|촉진하다, 용이하게 하다
+feasible|실현 가능한
+fiscal|회계의, 재정의
+fluctuate|변동하다
+forecast|예측하다
+formulate|공식화하다
+frequent|빈번한
+fulfill|이행하다, 충족하다
+furnish|제공하다, 비품을 갖추다
+generate|발생시키다
+guarantee|보증하다
+hazard|위험 요소
+hesitate|망설이다
+hence|따라서
+henceforth|앞으로는
+identify|확인하다, 식별하다
+implement|시행하다
+imply|암시하다
+incentive|장려책
+incur|(손실 등을) 초래하다
+indicate|나타내다
+inevitable|불가피한
+inquire|문의하다
+inspect|점검하다
+install|설치하다
+institute|도입하다, 기관
+insurance|보험
+integrate|통합하다
+interim|임시의
+invoice|청구서
+issue|발행하다, 문제
+itinerary|여행 일정
+jeopardize|위태롭게 하다
+liability|책임, 부채
+likelihood|가능성
+liquidate|청산하다
+maintain|유지하다
+mandatory|의무적인
+manufacture|제조하다
+margin|이윤, 여백
+merchandise|상품
+merge|합병하다
+minimize|최소화하다
+modify|수정하다
+monitor|감시하다
+negotiate|협상하다
+neglect|소홀히 하다
+notify|통지하다
+obligation|의무
+obtain|얻다
+occupy|차지하다
+occur|발생하다
+offset|상쇄하다
+omit|생략하다
+operate|운영하다
+opponent|상대, 반대자
+optimal|최적의
+outstanding|뛰어난, 미지불된
+oversee|감독하다
+overdue|기한이 지난
+participate|참여하다
+patron|단골 고객, 후원자
+penalty|벌금, 처벌
+perceive|인지하다
+permanent|영구적인
+personnel|직원, 인사과
+persuade|설득하다
+postpone|연기하다
+potential|잠재적인
+precaution|예방 조치
+predecessor|전임자
+preliminary|예비의
+premises|부지, 구내
+prescribe|처방하다, 규정하다
+preside|주재하다
+prevail|우세하다
+previous|이전의
+prior|사전의
+priority|우선순위
+procedure|절차
+proceed|진행하다
+procure|구입하다, 조달하다
+productivity|생산성
+profitable|수익성 있는
+prohibit|금지하다
+promote|승진시키다, 홍보하다
+prompt|신속한
+proficiency|능숙도
+proposal|제안서
+prospective|장래의, 유망한
+provision|조항, 공급
+punctual|시간을 엄수하는
+purchase|구매하다
+qualify|자격을 얻다
+quote|견적, 인용하다
+rate|요금, 비율
+recipient|수령인
+reconcile|조정하다, 화해시키다
+recruit|채용하다
+refund|환불
+regarding|~에 관하여
+regulation|규정
+reimburse|환급하다
+reinforce|강화하다
+reliable|믿을 만한
+relocate|이전하다
+remainder|나머지
+remit|송금하다
+renew|갱신하다
+renovate|개조하다
+replace|교체하다
+representative|대표, 담당자
+reputation|평판
+require|요구하다
+reserve|예약하다
+resign|사임하다
+resolve|해결하다
+restrict|제한하다
+retain|유지하다, 보유하다
+retrieve|되찾다, 검색하다
+revenue|수익, 매출
+revise|수정하다
+revoke|취소하다
+route|경로
+salary|급여
+scarce|부족한
+schedule|일정
+secure|확보하다, 안전한
+shortage|부족
+significant|중요한, 상당한
+solicit|요청하다
+sponsor|후원하다
+stable|안정적인
+statement|명세서, 진술
+stipulate|규정하다, 명시하다
+subscribe|구독하다
+subsidiary|자회사
+substantial|상당한
+subtotal|소계
+succeed|성공하다, 뒤를 잇다
+sufficient|충분한
+supervise|감독하다
+supplement|보충하다
+surplus|흑자, 잉여
+suspend|중단하다
+tentative|잠정적인
+terminate|종료하다
+thorough|철저한
+transaction|거래
+transfer|이동시키다, 전근
+transit|운송
+undergo|겪다
+unanimous|만장일치의
+update|갱신하다
+utilize|활용하다
+valid|유효한
+vacant|비어 있는
+vendor|판매업체
+venue|장소
+verify|확인하다, 검증하다
+viable|실행 가능한
+violate|위반하다
+vital|필수적인
+voucher|상품권, 쿠폰
+waive|포기하다, 면제하다
+warranty|품질 보증서
+withdraw|인출하다, 철회하다
+withstand|견디다
+workforce|노동력`;
+const W=RAW.trim().split('\n').map(l=>{const [e,k]=l.split('|');return {e,k}});
+const KEY='toeic_vocab_v1';
+const $=id=>document.getElementById(id);
+let S={seen:{},best:0};
+try{S=Object.assign(S,JSON.parse(localStorage.getItem(KEY)||'{}'))}catch(e){}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+const opt={dir:'en',n:'20',scope:'all'};
+let Q=[],qi=0,score=0,streak=0,wrongList=[],locked=false;
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a};
+const show=id=>['home','quiz','result'].forEach(s=>$(s).classList.toggle('hide',s!==id));
+function stats(){
+  let right=0,tot=0,mast=0;
+  for(const e in S.seen){const r=S.seen[e];right+=r.c;tot+=r.c+r.w;if(r.c>=2&&r.c>r.w)mast++}
+  $('total').textContent=W.length;
+  $('sMastered').textContent=mast;
+  $('sAcc').textContent=tot?Math.round(right/tot*100)+'%':'-';
+  $('sBest').textContent=S.best;
+  $('prog').style.width=(mast/W.length*100)+'%';
+  $('prog').parentElement.setAttribute('aria-valuenow',Math.round(mast/W.length*100));
+}
+document.querySelectorAll('.chip').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll(`.chip[data-k="${b.dataset.k}"]`).forEach(x=>x.classList.remove('on'));
+  b.classList.add('on');opt[b.dataset.k]=b.dataset.v;
+});
+$('start').onclick=()=>{
+  let pool=W;
+  if(opt.scope==='wrong')pool=W.filter(w=>S.seen[w.e]&&S.seen[w.e].w>0&&S.seen[w.e].c<=S.seen[w.e].w+1);
+  if(!pool.length){$('msg').textContent='아직 오답 단어가 없어요. 전체 범위로 먼저 풀어보세요.';return}
+  pool=shuffle(pool);
+  if(opt.scope==='new')pool.sort((a,b)=>!!S.seen[a.e]-!!S.seen[b.e]);
+  Q=pool.slice(0,+opt.n).map(w=>({w,dir:opt.dir==='mix'?(Math.random()<.5?'en':'ko'):opt.dir}));
+  qi=0;score=0;streak=0;wrongList=[];$('msg').textContent='';
+  show('quiz');ask();
+};
+function ask(){
+  locked=false;const {w,dir}=Q[qi];
+  $('qn').textContent=`${qi+1} / ${Q.length}`;$('qs').textContent=`정답 ${score}`;
+  const q=$('qq');q.textContent=dir==='en'?w.e:w.k;q.className='q'+(dir==='ko'?' ko':'');
+  const ds=shuffle(W.filter(x=>x.e!==w.e&&x.k!==w.k)).slice(0,3);
+  const os=shuffle([w,...ds]);
+  $('opts').innerHTML='';
+  os.forEach((o,i)=>{
+    const b=document.createElement('button');b.className='opt';
+    b.textContent=`${i+1}. ${dir==='en'?o.k:o.e}`;
+    b.onclick=()=>pick(b,o,w,os);b.dataset.e=o.e;
+    $('opts').appendChild(b);
+  });
+  $('next').classList.add('hide');
+}
+function pick(btn,o,w){
+  if(locked)return;locked=true;
+  const r=S.seen[w.e]||(S.seen[w.e]={c:0,w:0});
+  const ok=o.e===w.e;
+  if(ok){r.c++;score++;streak++;if(streak>S.best)S.best=streak}else{r.w++;streak=0;wrongList.push(w)}
+  btn.classList.add(ok?'ok':'no');
+  document.querySelectorAll('.opt').forEach(b=>{b.disabled=true;if(b.dataset.e===w.e)b.classList.add('ok')});
+  $('qs').textContent=`정답 ${score}`;save();
+  $('next').textContent=qi+1<Q.length?'다음 문제':'결과 보기';
+  $('next').classList.remove('hide');$('next').focus();
+}
+$('next').onclick=()=>{qi++;if(qi<Q.length)ask();else finish()};
+document.addEventListener('keydown',e=>{
+  if($('quiz').classList.contains('hide'))return;
+  if(!locked&&/^[1-4]$/.test(e.key)){const b=document.querySelectorAll('.opt')[+e.key-1];if(b)b.click()}
+  else if(locked&&e.key==='Enter'){e.preventDefault();$('next').click()}
+});
+function finish(){
+  show('result');
+  $('rs').textContent=`${score} / ${Q.length}`;
+  $('rt').textContent=wrongList.length?`틀린 단어 ${wrongList.length}개`:'모두 맞혔어요!';
+  $('wl').innerHTML=wrongList.map(w=>`<li><b>${w.e}</b>${w.k}</li>`).join('');
+  stats();
+}
+$('again').onclick=()=>$('start').click();
+$('home2').onclick=()=>{show('home');stats()};
+$('reset').onclick=()=>{if(confirm('학습 기록을 모두 지울까요?')){S={seen:{},best:0};save();stats()}};
+stats();
+</script>
+</body>
+</html>
